@@ -39,7 +39,7 @@ send_sms(AccountSID, AuthToken, From, To, Body) ->
     % Add "From" and "To" parameters to send to twilio
     Params2 = [{"From", From}, {"To", To}, {"Body", Body}],
 
-    Path = "/Accounts/" ++ AccountSID ++ "/SMS/Messages",
+    Path = "/Accounts/" ++ AccountSID ++ "/Messages",
 
     request(AccountSID, AuthToken, post, Path, Params2).
 
