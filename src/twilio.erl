@@ -52,8 +52,9 @@ request(AccountSID, AuthToken, get, Path, []) ->
     case httpc:request(get, Request, [], []) of
         {ok, {{_, 200, _}, _, R}} ->
             {ok, R};
-        {ok, {{_, N, _}, _, _}} ->
-            {error, "Error: " ++ integer_to_list(N)};
+        {ok, {{_, N, _}, RH, RB}} ->
+            Twilio_Id = proplists:get_value("twilio-request-id", RH, "N/A"),
+            {error, "Status " ++ integer_to_list(N) ++ ", Twilio Req. ID: " ++ Twilio_Id ++ ", Details: " ++ to_string(RB)};
         {error, _} = Error ->
             {error, Error}
     end;
@@ -69,7 +70,7 @@ request(AccountSID, AuthToken, post, Path, Params) ->
             {ok, ok};
         {ok, {{_, N, _}, RH, RB}} ->
             Twilio_Id = proplists:get_value("twilio-request-id", RH, "N/A"),
-            {error, "Error: " ++ integer_to_list(N) ++ ", Twilio Req. ID: " ++ Twilio_Id ++ ", Details: " ++ to_string(RB)};
+            {error, "Status " ++ integer_to_list(N) ++ ", Twilio Req. ID: " ++ Twilio_Id ++ ", Details: " ++ to_string(RB)};
         {error, _} = Error ->
             {error, Error}
     end.
