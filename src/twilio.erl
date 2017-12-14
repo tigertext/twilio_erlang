@@ -67,8 +67,9 @@ request(AccountSID, AuthToken, post, Path, Params) ->
     case httpc:request(post, Request, [], []) of
         {ok, {{_, 201, _}, _, _}} ->
             {ok, ok};
-        {ok, {{_, N, _}, _, _}} ->
-            {error, "Error: " ++ integer_to_list(N)};
+        {ok, {{_, N, _}, RH, RB}} ->
+            Twilio_Id = proplists:get_value("twilio-request-id", RH, "N/A"),
+            {error, "Error: " ++ integer_to_list(N) ++ ", Twilio Req. ID: " ++ Twilio_Id ++ ", Details: " ++ to_string(RB)};
         {error, _} = Error ->
             {error, Error}
     end.
@@ -79,6 +80,10 @@ expand_params(Params) ->
     ParamStrings = [edoc_lib:escape_uri(Name) ++ "=" ++ edoc_lib:escape_uri(Value)
               || {Name, Value} <- Params],
     string:join(ParamStrings, "&").
+
+to_string(B) when is_binary(B)  -> binary_to_list(B);
+to_string(S) when is_list(S)    -> S;
+to_string(Etc)                  -> binary_to_list(term_to_binary(Etc)).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
