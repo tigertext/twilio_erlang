@@ -8,7 +8,7 @@
 -module(twilio).
 
 -export([make_call/5,
-        send_sms/5]).
+    send_sms/5, send_sms_using_messaging_service/5]).
 -export([request/5]).
 
 -define(BASE_URL, "api.twilio.com").
@@ -34,10 +34,18 @@ make_call(AccountSID, AuthToken, From, To, Params) ->
 %% to twilio.  The list of accepted parameters can be found
 %% at [http://www.twilio.com/docs/api/rest/making_calls].
 %% One of "Url" or "ApplicationSid" must be provided.
--spec send_sms(string(), string(), string(), string(), [twilio_param()]) -> twilio_response().
+-spec send_sms(string(), string(), string(), string(), string()) -> twilio_response().
 send_sms(AccountSID, AuthToken, From, To, Body) ->
+    send_sms_using({"From", From}, AccountSID, AuthToken, To, Body).
+
+%% @doc Sends an SMS using a messaging service. Reference: [https://www.twilio.com/docs/api/rest/sending-messages#messaging-services]
+-spec send_sms_using_messaging_service(string(), string(), string(), string(), string()) -> twilio_response().
+send_sms_using_messaging_service(AccountSID, AuthToken, MessagingServiceSid, To, Body) ->
+    send_sms_using({"MessagingServiceSid", MessagingServiceSid}, AccountSID, AuthToken, To, Body).
+
+send_sms_using(Sender_Param, AccountSID, AuthToken, To, Body) ->
     % Add "From" and "To" parameters to send to twilio
-    Params2 = [{"From", From}, {"To", To}, {"Body", Body}],
+    Params2 = [Sender_Param, {"To", To}, {"Body", Body}],
 
     Path = "/Accounts/" ++ AccountSID ++ "/Messages",
 
