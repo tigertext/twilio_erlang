@@ -8,7 +8,7 @@
 -module(twilio).
 
 -export([make_call/5,
-        send_sms/5]).
+    send_sms/5, send_sms_using_messaging_service/5]).
 -export([request/5]).
 
 -define(BASE_URL, "api.twilio.com").
@@ -34,10 +34,18 @@ make_call(AccountSID, AuthToken, From, To, Params) ->
 %% to twilio.  The list of accepted parameters can be found
 %% at [http://www.twilio.com/docs/api/rest/making_calls].
 %% One of "Url" or "ApplicationSid" must be provided.
--spec send_sms(string(), string(), string(), string(), [twilio_param()]) -> twilio_response().
+-spec send_sms(string(), string(), string(), string(), string()) -> twilio_response().
 send_sms(AccountSID, AuthToken, From, To, Body) ->
+    send_sms_using({"From", From}, AccountSID, AuthToken, To, Body).
+
+%% @doc Sends an SMS using a messaging service. Reference: [https://www.twilio.com/docs/api/rest/sending-messages#messaging-services]
+-spec send_sms_using_messaging_service(string(), string(), string(), string(), string()) -> twilio_response().
+send_sms_using_messaging_service(AccountSID, AuthToken, MessagingServiceSid, To, Body) ->
+    send_sms_using({"MessagingServiceSid", MessagingServiceSid}, AccountSID, AuthToken, To, Body).
+
+send_sms_using(Sender_Param, AccountSID, AuthToken, To, Body) ->
     % Add "From" and "To" parameters to send to twilio
-    Params2 = [{"From", From}, {"To", To}, {"Body", Body}],
+    Params2 = [Sender_Param, {"To", To}, {"Body", Body}],
 
     Path = "/Accounts/" ++ AccountSID ++ "/Messages",
 
@@ -52,8 +60,9 @@ request(AccountSID, AuthToken, get, Path, []) ->
     case httpc:request(get, Request, [], []) of
         {ok, {{_, 200, _}, _, R}} ->
             {ok, R};
-        {ok, {{_, N, _}, _, _}} ->
-            {error, "Error: " ++ integer_to_list(N)};
+        {ok, {{_, N, _}, RH, RB}} ->
+            Twilio_Id = proplists:get_value("twilio-request-id", RH, "N/A"),
+            {error, "Status " ++ integer_to_list(N) ++ ", Twilio Req. ID: " ++ Twilio_Id ++ ", Details: " ++ to_string(RB)};
         {error, _} = Error ->
             {error, Error}
     end;
@@ -67,8 +76,9 @@ request(AccountSID, AuthToken, post, Path, Params) ->
     case httpc:request(post, Request, [], []) of
         {ok, {{_, 201, _}, _, _}} ->
             {ok, ok};
-        {ok, {{_, N, _}, _, _}} ->
-            {error, "Error: " ++ integer_to_list(N)};
+        {ok, {{_, N, _}, RH, RB}} ->
+            Twilio_Id = proplists:get_value("twilio-request-id", RH, "N/A"),
+            {error, "Status " ++ integer_to_list(N) ++ ", Twilio Req. ID: " ++ Twilio_Id ++ ", Details: " ++ to_string(RB)};
         {error, _} = Error ->
             {error, Error}
     end.
@@ -79,6 +89,10 @@ expand_params(Params) ->
     ParamStrings = [edoc_lib:escape_uri(Name) ++ "=" ++ edoc_lib:escape_uri(Value)
               || {Name, Value} <- Params],
     string:join(ParamStrings, "&").
+
+to_string(B) when is_binary(B)  -> binary_to_list(B);
+to_string(S) when is_list(S)    -> S;
+to_string(Etc)                  -> binary_to_list(term_to_binary(Etc)).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
