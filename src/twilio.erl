@@ -7,8 +7,12 @@
 %%%-------------------------------------------------------------------
 -module(twilio).
 
--export([make_call/5,
-    send_sms/5, send_sms_using_messaging_service/5]).
+-export([
+    make_call/5,
+    send_fax/5,
+    send_sms/5,
+    send_sms_using_messaging_service/5
+]).
 -export([request/5]).
 
 -define(BASE_URL, "api.twilio.com").
@@ -51,11 +55,23 @@ send_sms_using(Sender_Param, AccountSID, AuthToken, To, Body) ->
 
     request(AccountSID, AuthToken, post, Path, Params2).
 
+%% @doc Sends a fax.  Opts is a list of parameters to send
+%% to Twilio.  The list of accepted parameters can be found
+%% at [https://www.twilio.com/docs/fax/api/faxes].
+-spec send_fax(string(), string(), string(), string(), string()) -> twilio_response().
+send_fax(AccountSID, AuthToken, From, To, Media_Url) ->
+    Full_Url = "https://fax.twilio.com/v1/Faxes/",
+    Params = [
+        {"From", From},
+        {"To", To},
+        {"MediaUrl", Media_Url}
+    ],
+    request(AccountSID, AuthToken, post, Full_Url, Params).
+
 %% @doc Makes a Twilio API request.
 -spec request(string(), string(), atom(), string(), [{string(), string()}]) -> twilio_response().
 request(AccountSID, AuthToken, get, Path, []) ->
-    RequestURL = "https://" ++ AccountSID ++ ":" ++ AuthToken
-                 ++ "@"?BASE_URL"/"?API_VERSION_2010 ++ Path,
+    RequestURL = build_twilio_url(Path, AccountSID, AuthToken),
     Request = {RequestURL, [{"Accept", "application/json"}]},
     case httpc:request(get, Request, [], []) of
         {ok, {{_, 200, _}, _, R}} ->
@@ -67,14 +83,13 @@ request(AccountSID, AuthToken, get, Path, []) ->
             {error, Error}
     end;
 request(AccountSID, AuthToken, post, Path, Params) ->
-    RequestURL = "https://" ++ AccountSID ++ ":" ++ AuthToken
-                 ++ "@"?BASE_URL"/"?API_VERSION_2010 ++ Path,
-    
+    RequestURL = build_twilio_url(Path, AccountSID, AuthToken),
     ParamsString = expand_params(Params),
     Request = {RequestURL, [], "application/x-www-form-urlencoded", ParamsString},
     % @TODO properly parse for twilio errors
     case httpc:request(post, Request, [], []) of
-        {ok, {{_, 201, _}, _, _}} ->
+        {ok, {{_, 201, _}, _, _}} = Response ->
+            ct:pal("Twilio POST response to ~p: ~p", [RequestURL, Response]),
             {ok, ok};
         {ok, {{_, N, _}, RH, RB}} ->
             Twilio_Id = proplists:get_value("twilio-request-id", RH, "N/A"),
@@ -82,6 +97,13 @@ request(AccountSID, AuthToken, post, Path, Params) ->
         {error, _} = Error ->
             {error, Error}
     end.
+
+build_twilio_url("http://" ++ Path, AccountSID, AuthToken) ->
+    "http://" ++ AccountSID ++ ":" ++ AuthToken ++ "@" ++ Path;
+build_twilio_url("https://" ++ Path, AccountSID, AuthToken) ->
+    "https://" ++ AccountSID ++ ":" ++ AuthToken ++ "@" ++ Path;
+build_twilio_url(Path, AccountSID, AuthToken) ->
+    "https://" ++ AccountSID ++ ":" ++ AuthToken ++ "@"?BASE_URL"/"?API_VERSION_2010 ++ Path.
 
 %% @doc Expands a list of twilio parameters to a URL escaped query string.
 -spec expand_params([twilio_param()]) -> string().
