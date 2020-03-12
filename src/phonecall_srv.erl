@@ -93,7 +93,7 @@ init([Type, Params, TwiML_EXT]) ->
     Log = make_log(Type, Params),
     io:format("Log is ~p~n", [Log]),
     {ok, #pc_state{twiml_ext = TwiML_EXT, initial_params = Params,
-               log = Log, fsm = FSM, history = [{init, now(), Params}]}}.
+               log = Log, fsm = FSM, history = [{init, erlang:timestamp(), Params}]}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -122,7 +122,7 @@ handle_call(Request, _From, State) ->
                                              [Rec#twilio.call_sid]]),
                   {ok, State};
               {start_call, _Type, Rec, Callbacks} ->
-                  {R, NS} = execute(State, {start_call, now(), Rec}),
+                  {R, NS} = execute(State, {start_call, erlang:timestamp(), Rec}),
                   #pc_state{eventcallbacks = ECB} = NS,
                   {R, NS#pc_state{eventcallbacks = lists:merge(ECB, Callbacks)}};
               {recording_notification, Rec} ->
@@ -133,7 +133,7 @@ handle_call(Request, _From, State) ->
                  respond(State, Rec);
               {goto_state, Rec, Goto} ->
                   NewState = State#pc_state{currentstate = Goto},
-                  execute(NewState, {"goto " ++ Goto, now(), Rec});
+                  execute(NewState, {"goto " ++ Goto, erlang:timestamp(), Rec});
               {Other, _Rec} ->
                    io:format("Got ~p call in phonecall_srv~n", [Other]),
                    {ok, State}
