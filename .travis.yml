@@ -1,4 +1,7 @@
+sudo: false
 language: erlang
-otp_release:
-   - R15B
-   - R14B04
+
+otp_release: 22.2
+
+script:
+   - make test
