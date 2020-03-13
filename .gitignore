@@ -6,3 +6,7 @@
 ebin/
 ebin/*.beam
 /deps
+.idea/
+_build/
+ebin/
+*.iml

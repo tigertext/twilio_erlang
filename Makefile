@@ -1,15 +1,14 @@
 all:
-	./rebar get-deps compile
+	rebar get-deps compile
 
 clean:
-	./rebar clean
+	rebar clean
 
 test:
-	./rebar skip_deps=true eunit
+	rebar skip_deps=true eunit
 
 release:
-	./rebar generate -f
+	rebar generate -f
 
 edoc:
-	./rebar skip_deps=true doc
-
+	rebar skip_deps=true doc
