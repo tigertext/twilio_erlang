@@ -1,14 +1,19 @@
 all:
-	rebar get-deps compile
+	./rebar3 get-deps compile
+
+compile:
+	./rebar3 compile
 
 clean:
-	rebar clean
+	./rebar3 clean -a
 
 test:
-	rebar skip_deps=true eunit
+	./rebar3 eunit
 
-release:
-	rebar generate -f
+dialyze:
+	./rebar3 as dialyzer dialyzer
 
-edoc:
-	rebar skip_deps=true doc
+xref:
+	./rebar3 as test xref
+
+.PHONY: all compile clean test dialyze
