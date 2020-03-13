@@ -4,6 +4,6 @@ language: erlang
 matrix:
    include:
       - otp_release: 22.2
-        dist: trusty
+
 script:
    - make test
