@@ -5,7 +5,7 @@
 *~
 ebin/
 ebin/*.beam
-/deps
+deps/
 .idea/
 _build/
 ebin/
