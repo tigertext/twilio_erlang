@@ -53,7 +53,7 @@ generate_claims(AccountSID, Capabilities, Opts) ->
 %% @doc Generates the expiration date for a token.
 get_expiration(Opts) ->
     ExpiresAfter = proplists:get_value(expires_after, Opts, ?DEFAULT_EXPIRATION),
-    {Megaseconds, Seconds, _Microseconds} = erlang:now(),
+    {Megaseconds, Seconds, _Microseconds} = erlang:timestamp(),
     (Megaseconds * 1000000) + Seconds + ExpiresAfter.
 
 %% @doc Maps and URL escapes a proplist and joins them together with '&'s.
